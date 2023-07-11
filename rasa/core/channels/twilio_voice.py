@@ -88,6 +88,9 @@ class TwilioVoiceInput(InputChannel):
         "Polly.Aditi",
     ]
 
+
+    
+
     SUPPORTED_SPEECH_MODELS = ["default", "numbers_and_commands", "phone_call"]
 
     @classmethod
@@ -236,11 +239,16 @@ class TwilioVoiceInput(InputChannel):
             input_channel = self.name()
             call_status = request.form.get("CallStatus")
 
+            print(f"-----\n CallStatus :: {call_status}\n-----\n ")
+
             collector = TwilioVoiceCollectingOutputChannel()
 
             # Provide an initial greeting to answer the user's call.
             if (text is None) and (call_status == "ringing"):
                 text = self.initial_prompt
+            if call_status == "completed":
+                print(f"---- completed call status : {call_status}")
+                text = "call_terminated"
 
             # determine the response.
             if text is not None:
@@ -273,6 +281,9 @@ class TwilioVoiceInput(InputChannel):
                 twilio_response = self._build_twilio_voice_response(
                     [{"text": last_response_text}]
                 )
+
+
+
             return response.text(str(twilio_response), content_type="text/xml")
 
         return twilio_voice_webhook
@@ -295,6 +306,11 @@ class TwilioVoiceInput(InputChannel):
         # Add a listener to the last message to listen for user response.
         for i, message in enumerate(messages):
             msg_text = message["text"]
+            if msg_text == "caller_verification_completed_end":
+                print(f"\n --------- End call event----------\n")
+                print(f"Message :: {msg_text}")
+                voice_response.hangup()
+
             if i + 1 == len(messages):
                 gather.say(msg_text, voice=self.assistant_voice)
                 voice_response.append(gather)
